@@ -342,7 +342,7 @@ function CardHeading({ children, right, mb = 16 }) {
 
 export default function UserProfilePage() {
   return (
-    <div style={{ minHeight: '100vh', background: '#87CEEB', fontFamily: FONT }}>
+    <div style={{ minHeight: '100vh', background: 'rgba(236, 142, 201, 1)', fontFamily: FONT }}>
       <div style={{ padding: 18 }}>
 
         {/* ── Mobile: identity + stats cards (hidden ≥ lg) ─────────────────── */}
