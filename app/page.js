@@ -32,10 +32,33 @@ const FIELDS = [
   { id: 'timezone', label: 'TIMEZONE', value: 'WET · UTC+1' },
 ];
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
+// ─── Design tokens (see DESIGN.md) ───────────────────────────────────────────────
 
-const ACCENT = '#2E6CF0';
-const ACCENT_SOFT = 'rgba(46,108,240,0.14)';
+const C = {
+  primary: '#533afd',
+  primaryDeep: '#4434d4',
+  primaryPress: '#2e2b8c',
+  primarySoft: '#665efd',
+  primarySubdued: '#b9b9f9',
+  brandDark: '#1c1e54',
+  ruby: '#ea2261',
+  canvas: '#ffffff',
+  canvasSoft: '#f6f9fc',
+  hairline: '#e3e8ee',
+  hairlineInput: '#a8c3de',
+  ink: '#0d253d',
+  inkSecondary: '#273951',
+  inkMute: '#64748d',
+  onPrimary: '#ffffff',
+};
+
+const FONT = "var(--font-inter), 'SF Pro Display', system-ui, -apple-system, sans-serif";
+const TNUM = '"tnum"';
+const SHADOW_1 = 'rgba(0,55,112,0.08) 0 1px 3px';
+const SHADOW_2 = 'rgba(0,55,112,0.08) 0 8px 24px, rgba(0,55,112,0.04) 0 2px 6px';
+
+// Indigo heatmap ramp — light → primary (DESIGN.md: ruby/indigo are accent, never buttons).
+const LEVEL_BG = ['#eef0fb', '#c9c6fb', '#8b84fc', C.primary];
 
 const INITIALS = STUDENT_NAME
   .split(/\s+/)
@@ -47,14 +70,15 @@ const INITIALS = STUDENT_NAME
 
 const OVERALL = Math.round(MODULES.reduce((s, m) => s + m.pct, 0) / MODULES.length);
 
+// Status → indigo/navy scale dot.
 const STATUS_DOT = {
-  Graded: '#3A3A3E',
-  Submitted: '#6A6A70',
-  'In review': '#9A9AA0',
-  'Not started': '#D2D2D6',
+  Graded: C.primary,
+  Submitted: C.primarySoft,
+  'In review': C.primarySubdued,
+  'Not started': C.hairline,
 };
 
-const LEVEL_BG = ['#EFEFF1', '#CFCFD4', '#9A9AA2', '#5C5C63'];
+const STATUS_ACTIVE = new Set(['Graded', 'Submitted', 'In review']);
 
 function buildCells(weeks, seed) {
   const cells = [];
@@ -71,9 +95,18 @@ function buildCells(weeks, seed) {
 const CELLS_FULL = buildCells(17, 3);
 const CELLS_MINI = buildCells(8, 9);
 
-// ─── Components ────────────────────────────────────────────────────────────────
+// Signature gradient mesh — cream / sherbet / lavender / indigo / ruby washed
+// horizontally across the upper third of the page (DESIGN.md). Approximated with
+// layered radial gradients.
+const MESH = `
+  radial-gradient(60% 140% at 8% -10%, #f5e9d4 0%, rgba(245,233,212,0) 55%),
+  radial-gradient(55% 150% at 34% -20%, rgba(249,107,238,0.30) 0%, rgba(249,107,238,0) 55%),
+  radial-gradient(55% 150% at 58% -25%, rgba(185,185,249,0.65) 0%, rgba(185,185,249,0) 58%),
+  radial-gradient(55% 160% at 80% -25%, rgba(83,58,253,0.38) 0%, rgba(83,58,253,0) 58%),
+  radial-gradient(55% 150% at 102% -15%, rgba(234,34,97,0.28) 0%, rgba(234,34,97,0) 55%)
+`;
 
-const FONT = "var(--font-poppins, 'Poppins'), sans-serif";
+// ─── Components ────────────────────────────────────────────────────────────────
 
 function AvatarCircle({ size, fontSize }) {
   return (
@@ -82,15 +115,15 @@ function AvatarCircle({ size, fontSize }) {
         width: size,
         height: size,
         borderRadius: '50%',
-        background: '#DDDDE0',
-        border: '1px solid #D2D2D6',
+        background: C.primarySubdued,
+        border: `1px solid ${C.primarySoft}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
       }}
     >
-      <span style={{ fontFamily: FONT, fontWeight: 300, fontSize, lineHeight: 1, color: '#8A8A90' }}>
+      <span style={{ fontFamily: FONT, fontWeight: 400, fontSize, lineHeight: 1, color: C.primaryDeep }}>
         {INITIALS}
       </span>
     </div>
@@ -104,7 +137,7 @@ function PencilIcon() {
       height={12}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#CACAD0"
+      stroke={C.hairlineInput}
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -116,23 +149,32 @@ function PencilIcon() {
   );
 }
 
+// Eyebrow / all-caps micro label (typography.micro-cap).
+function Eyebrow({ children, style }) {
+  return (
+    <span
+      style={{
+        fontFamily: FONT,
+        fontWeight: 400,
+        fontSize: 10,
+        lineHeight: 1.15,
+        letterSpacing: '0.1px',
+        textTransform: 'uppercase',
+        color: C.inkMute,
+        ...style,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
 function EditableField({ label, defaultValue }) {
   const [focused, setFocused] = useState(false);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span
-        style={{
-          fontFamily: FONT,
-          fontWeight: 600,
-          fontSize: 9,
-          lineHeight: 1,
-          letterSpacing: '0.1em',
-          color: '#AEAEB4',
-        }}
-      >
-        {label}
-      </span>
+      <Eyebrow>{label}</Eyebrow>
       <div
         style={{
           display: 'flex',
@@ -140,12 +182,12 @@ function EditableField({ label, defaultValue }) {
           gap: 8,
           ...(focused
             ? {
-                border: `1px solid ${ACCENT}`,
+                border: `1px solid ${C.primary}`,
                 borderRadius: 6,
-                padding: '8px 10px',
-                boxShadow: `0 0 0 3px ${ACCENT_SOFT}`,
+                padding: '8px 12px',
+                boxShadow: `0 0 0 3px rgba(83,58,253,0.14)`,
               }
-            : { borderBottom: '1px dashed #DCDCE0', paddingBottom: 6 }),
+            : { borderBottom: `1px dashed ${C.hairline}`, paddingBottom: 6 }),
         }}
       >
         <span
@@ -155,10 +197,10 @@ function EditableField({ label, defaultValue }) {
           onBlur={() => setFocused(false)}
           style={{
             fontFamily: FONT,
-            fontWeight: 400,
-            fontSize: 13,
+            fontWeight: 300,
+            fontSize: 15,
             lineHeight: 1.4,
-            color: '#3A3A3E',
+            color: C.ink,
             outline: 'none',
             flex: 1,
             minWidth: 0,
@@ -176,21 +218,33 @@ function ModuleRow({ name, pct }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-        <span style={{ fontFamily: FONT, fontWeight: 500, fontSize: 13, lineHeight: 1.3, color: '#2A2A2E' }}>
+        <span style={{ fontFamily: FONT, fontWeight: 300, fontSize: 14, lineHeight: 1.3, color: C.ink }}>
           {name}
         </span>
-        <span style={{ fontFamily: FONT, fontWeight: 500, fontSize: 12, lineHeight: 1, color: '#9A9AA0', flexShrink: 0 }}>
+        <span
+          style={{
+            fontFamily: FONT,
+            fontWeight: 400,
+            fontSize: 13,
+            lineHeight: 1,
+            letterSpacing: '-0.39px',
+            color: C.inkMute,
+            flexShrink: 0,
+            fontFeatureSettings: TNUM,
+          }}
+        >
           {pct}%
         </span>
       </div>
-      <div style={{ height: 8, background: '#ECECEE', borderRadius: 9999, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: '#3A3A3E', borderRadius: 9999 }} />
+      <div style={{ height: 8, background: C.hairline, borderRadius: 9999, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: C.primary, borderRadius: 9999 }} />
       </div>
     </div>
   );
 }
 
 function HomeworkRow({ title, status, meta }) {
+  const active = STATUS_ACTIVE.has(status);
   return (
     <div
       style={{
@@ -198,7 +252,7 @@ function HomeworkRow({ title, status, meta }) {
         alignItems: 'center',
         gap: 12,
         padding: '11px 0',
-        borderBottom: '1px solid #EDEDEF',
+        borderBottom: `1px solid ${C.hairline}`,
       }}
     >
       <div
@@ -206,7 +260,7 @@ function HomeworkRow({ title, status, meta }) {
           width: 8,
           height: 8,
           borderRadius: '50%',
-          background: STATUS_DOT[status] ?? '#D2D2D6',
+          background: STATUS_DOT[status] ?? C.hairline,
           flexShrink: 0,
         }}
       />
@@ -214,10 +268,10 @@ function HomeworkRow({ title, status, meta }) {
         <div
           style={{
             fontFamily: FONT,
-            fontWeight: 500,
-            fontSize: 12.5,
+            fontWeight: 300,
+            fontSize: 14,
             lineHeight: 1.3,
-            color: '#2A2A2E',
+            color: C.ink,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -228,11 +282,12 @@ function HomeworkRow({ title, status, meta }) {
         <div
           style={{
             fontFamily: FONT,
-            fontWeight: 400,
-            fontSize: 11,
+            fontWeight: 300,
+            fontSize: 12,
             lineHeight: 1.3,
-            color: '#A0A0A6',
+            color: C.inkMute,
             marginTop: 2,
+            fontFeatureSettings: TNUM,
           }}
         >
           {meta}
@@ -241,14 +296,14 @@ function HomeworkRow({ title, status, meta }) {
       <span
         style={{
           fontFamily: FONT,
-          fontWeight: 500,
-          fontSize: 9.5,
-          lineHeight: 1,
-          letterSpacing: '0.05em',
+          fontWeight: 400,
+          fontSize: 10,
+          lineHeight: 1.15,
+          letterSpacing: '0.1px',
           textTransform: 'uppercase',
-          color: '#5A5A60',
-          background: '#F2F2F4',
-          border: '1px solid #E4E4E6',
+          color: active ? C.primaryDeep : C.inkMute,
+          background: active ? C.primarySubdued : C.canvasSoft,
+          border: active ? 'none' : `1px solid ${C.hairline}`,
           borderRadius: 9999,
           padding: '5px 9px',
           whiteSpace: 'nowrap',
@@ -284,10 +339,10 @@ function ActivityGrid({ cells }) {
           alignItems: 'center',
           gap: 6,
           fontFamily: FONT,
-          fontWeight: 400,
-          fontSize: 10,
+          fontWeight: 300,
+          fontSize: 11,
           lineHeight: 1,
-          color: '#A8A8AE',
+          color: C.inkMute,
         }}
       >
         <span>Less</span>
@@ -304,10 +359,11 @@ function Card({ children, style }) {
   return (
     <div
       style={{
-        background: '#fff',
-        border: '1px solid #EAEAEC',
-        borderRadius: 8,
-        padding: 22,
+        background: C.canvas,
+        border: `1px solid ${C.hairline}`,
+        borderRadius: 12,
+        padding: 24,
+        boxShadow: SHADOW_1,
         ...style,
       }}
     >
@@ -326,14 +382,46 @@ function CardHeading({ children, right, mb = 16 }) {
         marginBottom: mb,
       }}
     >
-      <span style={{ fontFamily: FONT, fontWeight: 500, fontSize: 13, lineHeight: 1, color: '#2A2A2E' }}>
+      <span style={{ fontFamily: FONT, fontWeight: 300, fontSize: 18, lineHeight: 1.1, letterSpacing: '-0.18px', color: C.ink }}>
         {children}
       </span>
       {right && (
-        <span style={{ fontFamily: FONT, fontWeight: 400, fontSize: 11.5, lineHeight: 1, color: '#A0A0A6' }}>
+        <span
+          style={{
+            fontFamily: FONT,
+            fontWeight: 300,
+            fontSize: 13,
+            lineHeight: 1,
+            letterSpacing: '-0.39px',
+            color: C.inkMute,
+            fontFeatureSettings: TNUM,
+          }}
+        >
           {right}
         </span>
       )}
+    </div>
+  );
+}
+
+// Big numeric stat (display-md, weight 300, negative tracking, tabular figures).
+function Stat({ value, label, align = 'right' }) {
+  return (
+    <div style={{ textAlign: align }}>
+      <div
+        style={{
+          fontFamily: FONT,
+          fontWeight: 300,
+          fontSize: 26,
+          lineHeight: 1,
+          letterSpacing: '-0.26px',
+          color: C.ink,
+          fontFeatureSettings: TNUM,
+        }}
+      >
+        {value}
+      </div>
+      <Eyebrow style={{ display: 'block', marginTop: 4 }}>{label}</Eyebrow>
     </div>
   );
 }
@@ -342,8 +430,22 @@ function CardHeading({ children, right, mb = 16 }) {
 
 export default function UserProfilePage() {
   return (
-    <div style={{ minHeight: '100vh', background: 'rgba(142, 225, 236, 1)', fontFamily: FONT }}>
-      <div style={{ padding: 18 }}>
+    <div style={{ position: 'relative', minHeight: '100vh', background: C.canvasSoft, fontFamily: FONT }}>
+      {/* Signature gradient mesh band across the upper third. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 320,
+          background: MESH,
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div style={{ position: 'relative', padding: 18, maxWidth: 1200, margin: '0 auto' }}>
 
         {/* ── Mobile: identity + stats cards (hidden ≥ lg) ─────────────────── */}
         <div className="flex flex-col gap-[14px] mb-[14px] lg:hidden">
@@ -353,18 +455,19 @@ export default function UserProfilePage() {
               display: 'flex',
               alignItems: 'center',
               gap: 13,
-              background: '#fff',
-              border: '1px solid #EAEAEC',
-              borderRadius: 8,
+              background: C.canvas,
+              border: `1px solid ${C.hairline}`,
+              borderRadius: 12,
               padding: '14px 16px',
+              boxShadow: SHADOW_1,
             }}
           >
             <AvatarCircle size={46} fontSize={15} />
             <div>
-              <div style={{ fontFamily: FONT, fontWeight: 400, fontSize: 15, lineHeight: 1.2, color: '#1C1C1E' }}>
+              <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 18, lineHeight: 1.2, letterSpacing: '-0.18px', color: C.ink }}>
                 {STUDENT_NAME}
               </div>
-              <div style={{ fontFamily: FONT, fontWeight: 400, fontSize: 11, lineHeight: 1.3, color: '#8A8A90', marginTop: 2 }}>
+              <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 12, lineHeight: 1.3, color: C.inkMute, marginTop: 2 }}>
                 {STUDENT_COHORT}
               </div>
             </div>
@@ -375,28 +478,19 @@ export default function UserProfilePage() {
             style={{
               display: 'flex',
               gap: 14,
-              background: '#fff',
-              border: '1px solid #EAEAEC',
-              borderRadius: 8,
+              background: C.canvas,
+              border: `1px solid ${C.hairline}`,
+              borderRadius: 12,
               padding: '14px 16px',
+              boxShadow: SHADOW_1,
             }}
           >
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 22, lineHeight: 1, color: '#1C1C1E' }}>
-                {OVERALL}%
-              </div>
-              <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 7.5, lineHeight: 1, letterSpacing: '0.1em', color: '#AEAEB4', marginTop: 4 }}>
-                COMPLETE
-              </div>
+            <div style={{ flex: 1 }}>
+              <Stat value={`${OVERALL}%`} label="Complete" align="center" />
             </div>
-            <div style={{ width: 1, background: '#ECECEE' }} />
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 22, lineHeight: 1, color: '#1C1C1E' }}>
-                {STREAK_DAYS}
-              </div>
-              <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 7.5, lineHeight: 1, letterSpacing: '0.1em', color: '#AEAEB4', marginTop: 4 }}>
-                STREAK
-              </div>
+            <div style={{ width: 1, background: C.hairline }} />
+            <div style={{ flex: 1 }}>
+              <Stat value={STREAK_DAYS} label="Streak" align="center" />
             </div>
           </div>
         </div>
@@ -407,50 +501,37 @@ export default function UserProfilePage() {
           style={{
             alignItems: 'center',
             gap: 16,
-            background: '#fff',
-            border: '1px solid #EAEAEC',
-            borderRadius: 8,
+            background: C.canvas,
+            border: `1px solid ${C.hairline}`,
+            borderRadius: 12,
             padding: '16px 20px',
             marginBottom: 18,
+            boxShadow: SHADOW_2,
           }}
         >
           <AvatarCircle size={54} fontSize={18} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: FONT, fontWeight: 400, fontSize: 18, lineHeight: 1.2, color: '#1C1C1E' }}>
+            <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 22, lineHeight: 1.1, letterSpacing: '-0.22px', color: C.ink }}>
               {STUDENT_NAME}
             </div>
-            <div style={{ fontFamily: FONT, fontWeight: 400, fontSize: 12, lineHeight: 1.4, color: '#8A8A90', marginTop: 2 }}>
+            <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 13, lineHeight: 1.4, color: C.inkMute, marginTop: 2 }}>
               {STUDENT_ROLE} · {STUDENT_COHORT}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 26, lineHeight: 1, color: '#1C1C1E' }}>
-                {OVERALL}%
-              </div>
-              <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 8, lineHeight: 1, letterSpacing: '0.1em', color: '#AEAEB4', marginTop: 4 }}>
-                COMPLETE
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 26, lineHeight: 1, color: '#1C1C1E' }}>
-                {STREAK_DAYS}
-              </div>
-              <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 8, lineHeight: 1, letterSpacing: '0.1em', color: '#AEAEB4', marginTop: 4 }}>
-                DAY STREAK
-              </div>
-            </div>
+            <Stat value={`${OVERALL}%`} label="Complete" />
+            <Stat value={STREAK_DAYS} label="Day streak" />
             <button
               style={{
                 fontFamily: FONT,
-                fontWeight: 500,
-                fontSize: 11,
+                fontWeight: 400,
+                fontSize: 14,
                 lineHeight: 1,
-                color: ACCENT,
-                border: `1px solid ${ACCENT}`,
+                color: C.onPrimary,
+                border: 'none',
                 borderRadius: 9999,
                 padding: '8px 16px',
-                background: 'none',
+                background: C.primary,
                 cursor: 'pointer',
               }}
             >
